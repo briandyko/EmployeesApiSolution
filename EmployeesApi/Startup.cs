@@ -4,10 +4,14 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using AutoMapper;
+using EmployeesApi.Domain;
+using EmployeesApi.MapperProfiles;
 using EmployeesApi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,8 +36,23 @@ namespace EmployeesApi
 
             //var systemTime = new SystemTime(); //configure it or whatever
             //services.AddSingleton<ISystemTime>(systemTime);
+            services.AddDbContext<EmployeesDataContext>(cfg =>
+            {
+                cfg.UseSqlServer(Configuration.GetConnectionString("Employees")); //TODO get rid of this hard coded connection string.
+            });
+            Console.WriteLine("API ADDRESS: " + Configuration.GetValue<string>("api-address"));
 
             services.AddTransient<ISystemTime, SystemTime>();
+
+            var mapperConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new EmployeeProfile());
+            });
+
+            IMapper mapper = mapperConfig.CreateMapper();
+            services.AddSingleton<IMapper>(mapper);
+            services.AddSingleton<MapperConfiguration>(mapperConfig);
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
